@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import json
 import sys
+import os
 
 def get_data(url):
     data=[]
@@ -26,7 +27,21 @@ def get_data(url):
             price=item.find("div", class_="baseline-pricing__value")
             trip['price']=price.text.strip().replace("\xa0","").replace("\n","").replace(" ","").replace("From", "From ") #price
             category_price=item.find("p", class_="baseline-pricing__category")
-            trip['category_price']=category_price.text.strip()
+            trip['category_price']=category_price.text.strip() #category_price
+            details_link=item.find("a", class_="vertical-activity-card__container gtm-trigger__card-interaction")
+            details_link="https://www.getyourguide.com/"+details_link['href']
+            trip['details_link']=details_link #details_link
+            ##
+            os.system("bash gen_dummy.sh {0}".format(details_link))
+            supplier=get_detail("a", "supplier-name__link adp-simple-experiment__link", False)
+            trip['supplier']=supplier #supplier
+            picture_collage=get_details("img", "photo-collage__image-source", True)
+            trip['picture_collage']=picture_collage #picture_collage
+            includes=get_details("span", "activity-inclusions__test activity-inclusions__test--include", False)
+            trip['includes']=includes #includes
+            excludes=get_details("span", "activity-inclusions__test activity-inclusions__test--exclude", False)
+            trip['excludes']=excludes #excludes
+            ##
             data.append(trip)
             print(trip)
         if len(data)==0:
@@ -50,11 +65,50 @@ def get_data(url):
                 price=item.find("div", class_="baseline-pricing__value")
                 trip['price']=price.text.strip().replace("\xa0","").replace("\n","").replace(" ","").replace("From", "From ") #price
                 category_price=item.find("p", class_="baseline-pricing__category")
-                trip['category_price']=category_price.text.strip()
+                trip['category_price']=category_price.text.strip() #category_price
+                details_link=item.find("a", class_="vertical-activity-card__container gtm-trigger__card-interaction")
+                details_link="https://www.getyourguide.com/"+details_link['href']
+                trip['details_link']=details_link #details_link
+                ##
+                os.system("bash gen_dummy.sh {0}".format(details_link)) #Creating dummy.html
+                supplier=get_detail("a", "supplier-name__link adp-simple-experiment__link", False)
+                trip['supplier']=supplier #supplier
+                picture_collage=get_details("img", "photo-collage__image-source", True)
+                trip['picture_collage']=picture_collage #picture_collage
+                includes=get_details("span", "activity-inclusions__test activity-inclusions__test--include", False)
+                trip['includes']=includes #includes
+                excludes=get_details("span", "activity-inclusions__test activity-inclusions__test--exclude", False)
+                trip['excludes']=excludes #excludes
+                ##
                 data.append(trip)
                 print(trip)
     fp.close()
     return data
+
+def get_detail(component, class_comp, isAttribute):
+    res=""
+    with open('peru/html/dummy.html') as f:
+        soup=BeautifulSoup(f, 'html.parser')
+        result=soup.find(component, class_=class_comp)
+        if isAttribute:
+            res=result['href']
+        else:
+            res=result.text
+    f.close()
+    return res
+
+def get_details(component, class_comp, isAttribute):
+    res=[]
+    with open('peru/html/dummy.html') as f:
+        soup=BeautifulSoup(f, 'html.parser')
+        result=soup.find_all(component, class_=class_comp)
+        for r in result:
+            if isAttribute:
+                res.append(r['src'])
+            else:
+                res.append(r.text)
+    f.close()
+    return res
 
 def create_json(data, filename):
     with open(filename, 'w') as f:
